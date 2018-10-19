@@ -22,15 +22,16 @@ const (
 
 type Reader struct {
 	Folder      string
-	Key         []byte
 	Flags       ReadFlag
 	StartPos    int64
 	EndPos      int64
 	LimitChunks int
+
+	cipher Cipher
 }
 
-func NewReader(folder string, key []byte) *Reader {
-	return &Reader{folder, key, RF_LoadBuffer, 0, 0, 0}
+func NewReader(folder string, cipher Cipher) *Reader {
+	return &Reader{folder, RF_LoadBuffer, 0, 0, 0, cipher}
 }
 
 type ReaderInfo struct {
@@ -132,7 +133,7 @@ func (r *Reader) Scan(op ReadOp) error {
 				log.Printf("Loading chunk %d %s with size %d", i, c.FileName, c.UncompressedByteSize)
 			}
 
-			if chunk, err = loadChunkIntoBuffer(file, r.Key, c.UncompressedByteSize, chunk); err != nil {
+			if chunk, err = r.loadChunkIntoBuffer(file, c.UncompressedByteSize, chunk); err != nil {
 				log.Panicf("Failed to load chunk %s", c.FileName)
 			}
 
@@ -256,7 +257,7 @@ func getMaxByteSize(cs []*ChunkDto, b *BufferDto) int64 {
 	return bufferSize
 }
 
-func loadChunkIntoBuffer(loc string, key []byte, size int64, b []byte) ([]byte, error) {
+func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, error) {
 
 	var decryptor io.Reader
 	var err error
@@ -268,7 +269,7 @@ func loadChunkIntoBuffer(loc string, key []byte, size int64, b []byte) ([]byte, 
 
 	defer chunkFile.Close()
 
-	if decryptor, err = chainDecryptor(key, chunkFile); err != nil {
+	if decryptor, err = r.cipher.Decrypt(chunkFile); err != nil {
 		log.Panicf("Failed to chain decryptor for %s: %s", loc, err)
 	}
 

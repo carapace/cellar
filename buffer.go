@@ -22,9 +22,11 @@ type Buffer struct {
 
 	writer *bufio.Writer
 	stream *os.File
+
+	cipher Cipher
 }
 
-func openBuffer(d *BufferDto, folder string) (*Buffer, error) {
+func openBuffer(d *BufferDto, folder string, cipher Cipher) (*Buffer, error) {
 
 	if len(d.FileName) == 0 {
 		return nil, errors.New("empty filename")
@@ -49,6 +51,7 @@ func openBuffer(d *BufferDto, folder string) (*Buffer, error) {
 		records:  d.Records,
 		stream:   f,
 		writer:   bufio.NewWriter(f),
+		cipher:   cipher,
 	}
 	return b, nil
 }
@@ -98,7 +101,7 @@ func (b *Buffer) close() error {
 	return nil
 }
 
-func (b *Buffer) compress(key []byte) (dto *ChunkDto, err error) {
+func (b *Buffer) compress() (dto *ChunkDto, err error) {
 
 	loc := b.stream.Name() + ".lz4"
 
@@ -135,7 +138,7 @@ func (b *Buffer) compress(key []byte) (dto *ChunkDto, err error) {
 
 	// encrypt before buffering
 	var encryptor *cipher.StreamWriter
-	if encryptor, err = chainEncryptor(key, buffer); err != nil {
+	if encryptor, err = b.cipher.Encrypt(buffer); err != nil {
 		log.Panicf("Failed to chain encryptor for %s: %s", loc, err)
 	}
 

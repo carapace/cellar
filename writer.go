@@ -18,11 +18,11 @@ type Writer struct {
 	maxValSize    int64
 	folder        string
 	maxBufferSize int64
-	key           []byte
+	cipher        Cipher
 	encodingBuf   []byte
 }
 
-func NewWriter(folder string, maxBufferSize int64, key []byte) (*Writer, error) {
+func NewWriter(folder string, maxBufferSize int64, cipher Cipher) (*Writer, error) {
 	ensureFolder(folder)
 
 	var db *mdb.DB
@@ -48,12 +48,12 @@ func NewWriter(folder string, maxBufferSize int64, key []byte) (*Writer, error) 
 		}
 
 		if dto == nil {
-			if b, err = createBuffer(tx, 0, maxBufferSize, folder); err != nil {
+			if b, err = createBuffer(tx, 0, maxBufferSize, folder, cipher); err != nil {
 				return errors.Wrap(err, "SetNewBuffer")
 			}
 			return nil
 
-		} else if b, err = openBuffer(dto, folder); err != nil {
+		} else if b, err = openBuffer(dto, folder, cipher); err != nil {
 			return errors.Wrap(err, "openBuffer")
 		}
 
@@ -70,7 +70,7 @@ func NewWriter(folder string, maxBufferSize int64, key []byte) (*Writer, error) 
 	wr := &Writer{
 		folder:        folder,
 		maxBufferSize: maxBufferSize,
-		key:           key,
+		cipher:        cipher,
 		encodingBuf:   make([]byte, binary.MaxVarintLen64),
 		db:            db,
 		b:             b,
@@ -124,7 +124,7 @@ func (w *Writer) Append(data []byte) (pos int64, err error) {
 	return pos, nil
 }
 
-func createBuffer(tx *mdb.Tx, startPos int64, maxSize int64, folder string) (*Buffer, error) {
+func createBuffer(tx *mdb.Tx, startPos int64, maxSize int64, folder string, cipher Cipher) (*Buffer, error) {
 	name := fmt.Sprintf("%012d", startPos)
 	dto := &BufferDto{
 		Pos:      0,
@@ -136,7 +136,7 @@ func createBuffer(tx *mdb.Tx, startPos int64, maxSize int64, folder string) (*Bu
 	var err error
 	var buf *Buffer
 
-	if buf, err = openBuffer(dto, folder); err != nil {
+	if buf, err = openBuffer(dto, folder, cipher); err != nil {
 		return nil, errors.Wrapf(err, "openBuffer %s", folder)
 	}
 
@@ -160,7 +160,7 @@ func (w *Writer) SealTheBuffer() error {
 
 	var dto *ChunkDto
 
-	if dto, err = oldBuffer.compress(w.key); err != nil {
+	if dto, err = oldBuffer.compress(); err != nil {
 		return errors.Wrap(err, "compress")
 	}
 
@@ -172,7 +172,7 @@ func (w *Writer) SealTheBuffer() error {
 			return errors.Wrap(err, "lmdbAddChunk")
 		}
 
-		if newBuffer, err = createBuffer(tx, newStartPos, w.maxBufferSize, w.folder); err != nil {
+		if newBuffer, err = createBuffer(tx, newStartPos, w.maxBufferSize, w.folder, w.cipher); err != nil {
 			return errors.Wrap(err, "createBuffer")
 		}
 		return nil

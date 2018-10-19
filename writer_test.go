@@ -37,14 +37,19 @@ func checkSeedBytes(data []byte, seed int) error {
 	return nil
 }
 
+var key = genRandBytes(16)
+
+func newCipher() Cipher {
+	return WithAES(key)
+}
+
 func TestWithClosing(t *testing.T) {
 
 	var w *Writer
 	var err error
 
 	folder := getFolder()
-	key := genRandBytes(16)
-	w, err = NewWriter(folder, 1000, key)
+	w, err = NewWriter(folder, 1000, newCipher())
 
 	defer closeWriter(t, w)
 
@@ -74,12 +79,12 @@ func TestWithClosing(t *testing.T) {
 
 		assert(t, err, "Closing")
 
-		w, err = NewWriter(folder, 1000, key)
+		w, err = NewWriter(folder, 1000, newCipher())
 		assert(t, err, "Opening writer")
 
 	}
 
-	reader := NewReader(folder, key)
+	reader := NewReader(folder, newCipher())
 
 	var valuesRead int
 	var n int
@@ -126,8 +131,7 @@ func TestUserCheckpoints(t *testing.T) {
 	)
 
 	folder := getFolder()
-	key := genRandBytes(16)
-	w, err = NewWriter(folder, 1000, key)
+	w, err = NewWriter(folder, 1000, newCipher())
 
 	defer closeWriter(t, w)
 
@@ -158,8 +162,7 @@ func TestSingleChunkDB(t *testing.T) {
 	var err error
 
 	folder := getFolder()
-	key := genRandBytes(16)
-	w, err = NewWriter(folder, 1000, key)
+	w, err = NewWriter(folder, 1000, newCipher())
 
 	defer closeWriter(t, w)
 
@@ -179,7 +182,7 @@ func TestSingleChunkDB(t *testing.T) {
 	var valuesRead int
 	var n int
 
-	reader := NewReader(folder, key)
+	reader := NewReader(folder, newCipher())
 
 	err = reader.Scan(func(pos *ReaderInfo, s []byte) error {
 
@@ -210,8 +213,7 @@ func TestSimpleKey(t *testing.T) {
 	var err error
 
 	folder := getFolder()
-	key := genRandBytes(16)
-	w, err = NewWriter(folder, 1000, key)
+	w, err = NewWriter(folder, 1000, newCipher())
 
 	defer closeWriter(t, w)
 
@@ -227,7 +229,7 @@ func TestSimpleKey(t *testing.T) {
 	}
 	assertCheckpoint(t, w)
 
-	reader := NewReader(folder, key)
+	reader := NewReader(folder, newCipher())
 	var valuesRead int
 	var n int
 
@@ -265,7 +267,6 @@ func TestFuzz(t *testing.T) {
 	maxIterations := 1000
 	maxValueLength := r.Intn(1024*128) + 10
 	maxBufferSize := r.Intn(maxValueLength*maxIterations/2) + 1
-	key := genRandBytes(16)
 
 	t.Logf("maxVal %d; maxBuffer %d; seed %d", maxValueLength, maxBufferSize, seed)
 
@@ -287,7 +288,7 @@ func TestFuzz(t *testing.T) {
 
 			recordsSaved := len(recs)
 
-			reader := NewReader(folder, key)
+			reader := NewReader(folder, newCipher())
 			recordPos := 0
 			if r.Intn(5) > 2 && recordsSaved > 0 {
 				// pick a random pos to scan from
@@ -323,7 +324,7 @@ func TestFuzz(t *testing.T) {
 		}
 
 		if writer == nil {
-			writer, err = NewWriter(folder, int64(maxBufferSize), key)
+			writer, err = NewWriter(folder, int64(maxBufferSize), newCipher())
 			assert(t, err, "new writer")
 		}
 

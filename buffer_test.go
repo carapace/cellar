@@ -20,7 +20,7 @@ func TestWrites(t *testing.T) {
 		err error
 	)
 
-	if buf, err = openBuffer(b, folder); err != nil {
+	if buf, err = openBuffer(b, folder, newCipher()); err != nil {
 		panic(err)
 	}
 
@@ -61,7 +61,7 @@ func TestExist(t *testing.T) {
 	var buf *Buffer
 	var err error
 
-	buf, err = openBuffer(b, folder)
+	buf, err = openBuffer(b, folder, newCipher())
 
 	assert(t, err, "openBuffer")
 
@@ -74,9 +74,8 @@ func TestExist(t *testing.T) {
 
 	buf.endRecord()
 
-	key := []byte("example key 1234")
 	var chunk *ChunkDto
-	chunk, err = buf.compress(key)
+	chunk, err = buf.compress()
 
 	assert(t, err, "compress")
 	assertExists(t, path.Join(folder, chunk.FileName))
