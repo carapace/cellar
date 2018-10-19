@@ -1,4 +1,4 @@
-module github.com/abdullin/cellar
+module github.com/carapace/cellar
 
 require (
 	github.com/abdullin/lex-go v0.0.0-20170809071836-51ee1bbe34a4
