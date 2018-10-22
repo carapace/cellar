@@ -99,6 +99,6 @@ func assertPos(t *testing.T, b *Buffer, expected int64) {
 }
 func assertExists(t *testing.T, path string) {
 	if _, e := os.Stat(path); e != nil {
-		t.Fatal("Buffer files should exist")
+		t.Fatal("buffer files should exist")
 	}
 }

@@ -1,13 +1,19 @@
 package cellar
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 	"io"
 	"log"
+	"testing"
+
+	"github.com/pkg/errors"
 )
+
+var defaultEncryptionKey = []byte("estencryptionkey")
 
 // Cipher defines the interface needed to support encryption of the DB
 type Cipher interface {
@@ -19,7 +25,7 @@ type Cipher interface {
 //
 // NOTE: the AES implementation was authored by Abdullin, this code has been
 // minimally changed.
-func WithAES(key []byte) AES {
+func NewAES(key []byte) AES {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		log.Panic("Failed to create a new cipher from the key")
@@ -64,3 +70,29 @@ func (a AES) Encrypt(w io.Writer) (*cipher.StreamWriter, error) {
 	writer := &cipher.StreamWriter{S: stream, W: w}
 	return writer, nil
 }
+
+// TestCipher is a testsuite for Cipher implementations, which may be used to verify custom
+// implementations
+func TestCipher(t *testing.T, cipher Cipher) {
+	data := []byte("some custom data")
+	stream, err := cipher.Encrypt(bytes.NewBuffer(data))
+
+	require.NoError(t, err)
+
+	buf := new(bytes.Buffer)
+	io.Copy(stream, buf)
+	reader, err := cipher.Decrypt(buf)
+	res := []byte{}
+	_, err = reader.Read(res)
+
+}
+
+// type CipherMock struct {}
+//
+// func (c CipherMock) Encrypt(w io.Writer) (*cipher.StreamWriter, error) {
+// 	return &cipher.StreamWriter{
+// 		W: w,
+// 		S:
+//
+// 	}, nil
+// }

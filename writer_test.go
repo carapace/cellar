@@ -2,7 +2,7 @@ package cellar
 
 import (
 	"crypto/rand"
-	fmt "fmt"
+	"fmt"
 	"io"
 	"log"
 	rnd "math/rand"
@@ -40,7 +40,7 @@ func checkSeedBytes(data []byte, seed int) error {
 var key = genRandBytes(16)
 
 func newCipher() Cipher {
-	return WithAES(key)
+	return NewAES(key)
 }
 
 func TestWithClosing(t *testing.T) {
