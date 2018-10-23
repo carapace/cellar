@@ -126,35 +126,37 @@ func lmdbGetBuffer(tx *mdb.Tx) (*BufferDto, error) {
 	return dto, nil
 }
 
-func lmdbIndexPosition(tx *mdb.Tx, stream string, k uint64, pos int64) error {
-	tpl := tuple.Tuple([]tuple.Element{MetaTable, stream, k})
-	key := tpl.Pack()
-	var err error
+// TODO ask abdullin why this function exists
+// func lmdbIndexPosition(tx *mdb.Tx, stream string, k uint64, pos int64) error {
+// 	tpl := tuple.Tuple([]tuple.Element{MetaTable, stream, k})
+// 	key := tpl.Pack()
+// 	var err error
+//
+// 	buf := make([]byte, binary.MaxVarintLen64)
+//
+// 	n := binary.PutVarint(buf, pos)
+// 	if err = tx.Put(key, buf[0:n]); err != nil {
+// 		return errors.Wrap(err, "tx.Put")
+// 	}
+// 	return nil
+// }
 
-	buf := make([]byte, binary.MaxVarintLen64)
-
-	n := binary.PutVarint(buf, pos)
-	if err = tx.Put(key, buf[0:n]); err != nil {
-		return errors.Wrap(err, "tx.Put")
-	}
-	return nil
-}
-
-func lmdbLookupPosition(tx *mdb.Tx, stream string, k uint64) (int64, error) {
-
-	tpl := tuple.Tuple([]tuple.Element{MetaTable, stream, k})
-	key := tpl.Pack()
-	var err error
-
-	var val []byte
-	if val, err = tx.Get(key); err != nil {
-		return 0, errors.Wrap(err, "tx.Get")
-	}
-	var pos int64
-
-	pos, _ = binary.Varint(val)
-	return pos, nil
-}
+// TODO ask abdullin why this function exists
+// func lmdbLookupPosition(tx *mdb.Tx, stream string, k uint64) (int64, error) {
+//
+// 	tpl := tuple.Tuple([]tuple.Element{MetaTable, stream, k})
+// 	key := tpl.Pack()
+// 	var err error
+//
+// 	var val []byte
+// 	if val, err = tx.Get(key); err != nil {
+// 		return 0, errors.Wrap(err, "tx.Get")
+// 	}
+// 	var pos int64
+//
+// 	pos, _ = binary.Varint(val)
+// 	return pos, nil
+// }
 
 func lmdbSetCellarMeta(tx *mdb.Tx, m *MetaDto) error {
 	key := mdb.CreateKey(CellarTable)

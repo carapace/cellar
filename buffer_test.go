@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWrites(t *testing.T) {
@@ -24,29 +26,24 @@ func TestWrites(t *testing.T) {
 		panic(err)
 	}
 
-	buf.writeBytes(makeSlice(1))
+	err = buf.writeBytes(makeSlice(1))
+	assert.NoError(t, err)
 
 	assertExists(t, path.Join(folder, "temp"))
 
 	assertPos(t, buf, 1)
 
-	assert(t, buf.writeBytes(make([]byte, 10)), "writeBytes")
+	assert.NoError(t, buf.writeBytes(make([]byte, 10)), "writeBytes")
 	assertPos(t, buf, 11)
 
-	assert(t, buf.flush(), "flush")
+	assert.NoError(t, buf.flush(), "flush")
 
 	assertPos(t, buf, 11)
 
 	err = buf.writeBytes(make([]byte, 10))
-	assert(t, err, "writeBytes")
+	assert.NoError(t, err, "writeBytes")
 
 	assertPos(t, buf, 21)
-}
-
-func assert(t *testing.T, err error, op string) {
-	if err != nil {
-		t.Fatalf("Failed %s: %s", op, err)
-	}
 }
 
 func TestExist(t *testing.T) {
@@ -63,13 +60,13 @@ func TestExist(t *testing.T) {
 
 	buf, err = openBuffer(b, folder, newCipher(), newCompressor())
 
-	assert(t, err, "openBuffer")
+	assert.NoError(t, err, "openBuffer")
 
-	assert(t, buf.writeBytes(makeSlice(1)), "writeVarInt")
+	assert.NoError(t, buf.writeBytes(makeSlice(1)), "writeVarInt")
 
 	assertPos(t, buf, 1)
 
-	assert(t, buf.writeBytes(make([]byte, 10)), "writeBytes")
+	assert.NoError(t, buf.writeBytes(make([]byte, 10)), "writeBytes")
 	assertExists(t, path.Join(folder, "temp"))
 
 	buf.endRecord()
@@ -77,7 +74,7 @@ func TestExist(t *testing.T) {
 	var chunk *ChunkDto
 	chunk, err = buf.compress()
 
-	assert(t, err, "compress")
+	assert.NoError(t, err, "compress")
 	assertExists(t, path.Join(folder, chunk.FileName))
 
 	if chunk.UncompressedByteSize != 11 {

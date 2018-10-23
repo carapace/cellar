@@ -25,10 +25,11 @@ type Writer struct {
 }
 
 func NewWriter(folder string, maxBufferSize int64, cipher Cipher, compressor Compressor) (*Writer, error) {
-	ensureFolder(folder)
-
+	err := ensureFolder(folder)
+	if err != nil {
+		return nil, err
+	}
 	var db *mdb.DB
-	var err error
 
 	cfg := mdb.NewConfig()
 	// make sure we are writing sync

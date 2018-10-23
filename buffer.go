@@ -38,7 +38,11 @@ func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compresso
 	if err != nil {
 		return nil, errors.Wrap(err, "Open file")
 	}
-	f.Truncate(int64(d.MaxBytes))
+	err = f.Truncate(int64(d.MaxBytes))
+	if err != nil {
+		return nil, err
+	}
+
 	if _, err := f.Seek(int64(d.Pos), io.SeekStart); err != nil {
 		return nil, errors.Wrap(err, "Seek")
 	}
@@ -158,7 +162,10 @@ func (b *Buffer) compress() (dto *ChunkDto, err error) {
 	}
 
 	zw.Close()
-	chunkFile.Sync()
+	err = chunkFile.Sync()
+	if err != nil {
+		return nil, err
+	}
 	b.close()
 
 	var size int64

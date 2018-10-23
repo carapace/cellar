@@ -8,6 +8,8 @@ import (
 	rnd "math/rand"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func genRandBytes(size int) []byte {
@@ -61,7 +63,7 @@ func TestWithClosing(t *testing.T) {
 
 	defer closeWriter(t, w)
 
-	assert(t, err, "NewWriter")
+	assert.NoError(t, err, "NewWriter")
 
 	var valuesWritten int
 
@@ -81,13 +83,15 @@ func TestWithClosing(t *testing.T) {
 		}
 
 		assertCheckpoint(t, w)
-		w.Checkpoint()
+		_, err = w.Checkpoint()
+		assert.NoError(t, err, "Closing")
+
 		err = w.Close()
 
-		assert(t, err, "Closing")
+		assert.NoError(t, err, "Closing")
 
 		w, err = NewWriter(folder, 1000, newCipher(), newCompressor())
-		assert(t, err, "Opening writer")
+		assert.NoError(t, err, "Opening writer")
 
 	}
 
@@ -108,7 +112,7 @@ func TestWithClosing(t *testing.T) {
 		return nil
 	})
 
-	assert(t, err, "ReadAll")
+	assert.NoError(t, err, "ReadAll")
 
 	if valuesRead != valuesWritten {
 		t.Fatalf("Expected to read %d bytes but read %d", valuesWritten, valuesRead)
@@ -142,18 +146,18 @@ func TestUserCheckpoints(t *testing.T) {
 
 	defer closeWriter(t, w)
 
-	assert(t, err, "NewWriter")
+	assert.NoError(t, err, "NewWriter")
 
 	pos, err = w.GetUserCheckpoint("custom")
-	assert(t, err, "GetCheckpoint")
+	assert.NoError(t, err, "GetCheckpoint")
 	if pos != 0 {
 		t.Fatal("Checkpoint should be 0")
 	}
 
-	assert(t, w.PutUserCheckpoint("custom", 42), "PutCheckpoint")
+	assert.NoError(t, w.PutUserCheckpoint("custom", 42), "PutCheckpoint")
 
 	pos, err = w.GetUserCheckpoint("custom")
-	assert(t, err, "GetCheckpoint")
+	assert.NoError(t, err, "GetCheckpoint")
 	if pos != 42 {
 		t.Fatal("Checkpoint should be 42")
 	}
@@ -173,7 +177,7 @@ func TestSingleChunkDB(t *testing.T) {
 
 	defer closeWriter(t, w)
 
-	assert(t, err, "NewWriter")
+	assert.NoError(t, err, "NewWriter")
 
 	var valuesWritten int
 	for i := 0; i < 2; i++ {
@@ -203,7 +207,7 @@ func TestSingleChunkDB(t *testing.T) {
 		return nil
 	})
 
-	assert(t, err, "ReadAll")
+	assert.NoError(t, err, "ReadAll")
 
 	if valuesRead != valuesWritten {
 		t.Fatalf("Expected to read %d bytes but read %d", valuesWritten, valuesRead)
@@ -224,7 +228,7 @@ func TestSimpleKey(t *testing.T) {
 
 	defer closeWriter(t, w)
 
-	assert(t, err, "NewWriter")
+	assert.NoError(t, err, "NewWriter")
 
 	var valuesWritten int
 	for i := 0; i < 30; i++ {
@@ -252,7 +256,7 @@ func TestSimpleKey(t *testing.T) {
 		return nil
 	})
 
-	assert(t, err, "ReadAll")
+	assert.NoError(t, err, "ReadAll")
 
 	if valuesRead != valuesWritten {
 		t.Fatalf("Expected to read %d bytes but read %d", valuesWritten, valuesRead)
@@ -286,9 +290,11 @@ func TestFuzz(t *testing.T) {
 		if r.Intn(17) == 13 || i == maxIterations {
 			if writer != nil {
 				assertCheckpoint(t, writer)
-				writer.Checkpoint()
+				_, err = writer.Checkpoint()
+				assert.NoError(t, err, "Checkpoint")
+
 				err = writer.Close()
-				assert(t, err, "Closing writer")
+				assert.NoError(t, err, "Closing writer")
 
 				writer = nil
 			}
@@ -316,7 +322,7 @@ func TestFuzz(t *testing.T) {
 				recordsWritten++
 			}
 
-			reader.Scan(func(p *ReaderInfo, b []byte) error {
+			err := reader.Scan(func(p *ReaderInfo, b []byte) error {
 				bytesRead += len(b)
 				recordsRead++
 				if err := checkSeedBytes(b, scanSeed); err != nil {
@@ -325,6 +331,9 @@ func TestFuzz(t *testing.T) {
 				scanSeed++
 				return nil
 			})
+
+			assert.NoError(t, err)
+
 			if bytesWritten != bytesRead {
 				t.Fatalf("Written %d bytes but read %d bytes from %d (%d). Records: %d, %d", bytesWritten, bytesRead, reader.StartPos, bytesRead+int(reader.StartPos), recordsWritten, recordsRead)
 			}
@@ -332,7 +341,7 @@ func TestFuzz(t *testing.T) {
 
 		if writer == nil {
 			writer, err = NewWriter(folder, int64(maxBufferSize), newCipher(), newCompressor())
-			assert(t, err, "new writer")
+			assert.NoError(t, err, "new writer")
 		}
 
 		valSize := r.Intn(maxValueLength)
@@ -347,7 +356,7 @@ func TestFuzz(t *testing.T) {
 			size: valSize,
 		})
 		if err != nil {
-			assert(t, err, "append")
+			assert.NoError(t, err, "append")
 		}
 	}
 }

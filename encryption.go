@@ -9,6 +9,8 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/pkg/errors"
@@ -81,11 +83,15 @@ func TestCipher(t *testing.T, cipher Cipher) {
 	require.NoError(t, err)
 
 	buf := new(bytes.Buffer)
-	io.Copy(stream, buf)
+	_, err = io.Copy(stream, buf)
+	assert.NoError(t, err)
+
 	reader, err := cipher.Decrypt(buf)
+	require.NoError(t, err)
+
 	res := []byte{}
 	_, err = reader.Read(res)
-
+	assert.NoError(t, err)
 }
 
 // type CipherMock struct {}

@@ -241,21 +241,22 @@ func replayChunk(info *ReaderInfo, chunk []byte, op ReadOp, pos int) error {
 
 }
 
-func getMaxByteSize(cs []*ChunkDto, b *BufferDto) int64 {
-
-	var bufferSize int64
-
-	for _, c := range cs {
-		if c.UncompressedByteSize > bufferSize {
-			bufferSize = c.UncompressedByteSize
-		}
-	}
-
-	if b != nil && b.MaxBytes > bufferSize {
-		bufferSize = b.MaxBytes
-	}
-	return bufferSize
-}
+// TODO ask abdullin why this function exists
+// func getMaxByteSize(cs []*ChunkDto, b *BufferDto) int64 {
+//
+// 	var bufferSize int64
+//
+// 	for _, c := range cs {
+// 		if c.UncompressedByteSize > bufferSize {
+// 			bufferSize = c.UncompressedByteSize
+// 		}
+// 	}
+//
+// 	if b != nil && b.MaxBytes > bufferSize {
+// 		bufferSize = b.MaxBytes
+// 	}
+// 	return bufferSize
+// }
 
 func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, error) {
 
