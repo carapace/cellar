@@ -4,6 +4,8 @@ jobs:
   test:
     docker:
     - image: carapaceio/go:1.11
+    environment:
+      - GO111MODULE: on
 
     steps:
     - checkout
