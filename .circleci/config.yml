@@ -18,6 +18,11 @@ jobs:
         - "/go/pkg"
 
     - run:
+        name: Get dependencies
+        command: |
+          go build ./...
+
+    - run:
         name: Test and run linters.
         command: |
           golangci-lint run
