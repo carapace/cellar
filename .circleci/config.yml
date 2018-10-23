@@ -1,0 +1,29 @@
+version: 2
+
+jobs:
+  test:
+    docker:
+    - image: carapaceio/go:1.11
+
+    steps:
+    - checkout
+
+    - restore_cache:
+        keys:
+        - v1-pkg-cache
+
+    - save_cache:
+        key: v1-pkg-cache
+        paths:
+        - "/go/pkg"
+
+    - run:
+        name: Test and run linters.
+        command: |
+          golangci-lint run
+          go test -v -race
+
+workflows:
+  version: 2
+  tests:
+    jobs: [test]
