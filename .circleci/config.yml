@@ -27,8 +27,9 @@ jobs:
     - run:
         name: Test and run linters.
         command: |
-#          golangci-lint run # golangci lint does not yet support go modules :(
           go test -v -race
+#          golangci-lint run # golangci lint does not yet support go modules :(
+
 
 workflows:
   version: 2
