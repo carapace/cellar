@@ -72,6 +72,7 @@ func TestWithClosing(t *testing.T) {
 	for j := 0; j < 5; j++ {
 		for i := 0; i < 30; i++ {
 			valuesWritten += 64
+
 			if _, err = w.Append(genSeedBytes(64, k)); err != nil {
 				t.Fatalf("Append failed: %s", err)
 			}
