@@ -29,5 +29,10 @@ before_script:
 # failing test, we want to see both. Configure golangci-lint with a
 # .golangci.yml file at the top level of your repo.
 script:
+
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
+- go test -v -covermode=count -coverprofile=coverage.out
+- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 - go test -v -race ./... -p 1 # Run all the tests with the race detector enabled, sequentially
                               # (due to multiple writers writing to the same folder in tests)

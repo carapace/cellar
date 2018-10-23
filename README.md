@@ -1,6 +1,10 @@
 # Cellar
 
 [![Build Status](https://travis-ci.com/carapace/cellar.svg?branch=master)](https://travis-ci.com/carapace/cellar)
+[![CircleCI](https://circleci.com/gh/carapace/cellar/tree/master.svg?style=svg)](https://circleci.com/gh/carapace/cellar/tree/master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/carapace/cellar)](https://goreportcard.com/report/github.com/carapace/cellar)
+[![Coverage Status](https://coveralls.io/repos/github/carapace/cellar/badge.svg?branch=master)](https://coveralls.io/github/carapace/cellar?branch=master)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 Cellar is the append-only storage backend in Go designed for the analytical
 workloads. It replaces [geyser-net](https://github.com/abdullin/geyser-net).
