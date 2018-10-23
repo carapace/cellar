@@ -87,7 +87,7 @@ func (w *Writer) Append(data []byte) (pos int64, err error) {
 	totalSize := n + len(data)
 
 	if !w.b.fits(int64(totalSize)) {
-		if err = w.SealTheBuffer(); err != nil {
+		if err = w.Flush(); err != nil {
 			return 0, errors.Wrap(err, "SealTheBuffer")
 		}
 	}
@@ -134,7 +134,7 @@ func createBuffer(db MetaDB, startPos int64, maxSize int64, folder string, ciphe
 
 }
 
-func (w *Writer) SealTheBuffer() error {
+func (w *Writer) Flush() error {
 
 	var err error
 
@@ -153,7 +153,6 @@ func (w *Writer) SealTheBuffer() error {
 
 	newStartPos := dto.StartPos + dto.UncompressedByteSize
 
-	fmt.Println("added chunks")
 	err = w.db.AddChunk(dto.StartPos, dto)
 	if err != nil {
 		return err

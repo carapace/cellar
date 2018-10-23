@@ -103,7 +103,7 @@ func TestDB_SealTheBuffer(t *testing.T) {
 
 	defer checkedClose(db)
 
-	err = db.SealTheBuffer()
+	err = db.Flush()
 	assert.NoError(t, err)
 }
 

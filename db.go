@@ -128,11 +128,11 @@ func (db *DB) Checkpoint() (pos int64, err error) {
 }
 
 // SealTheBuffer explicitly flushes the old buffer and creates a new buffer
-func (db *DB) SealTheBuffer() (err error) {
+func (db *DB) Flush() (err error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	return db.writer.SealTheBuffer()
+	return db.writer.Flush()
 }
 
 // GetUserCheckpoint returns the position of a named checkpoint
