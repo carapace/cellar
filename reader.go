@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"github.com/abdullin/mdb"
-	"github.com/pierrec/lz4"
 	"github.com/pkg/errors"
 )
 
@@ -259,7 +258,7 @@ func getMaxByteSize(cs []*ChunkDto, b *BufferDto) int64 {
 
 func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, error) {
 
-	var decryptor io.Reader
+	var decryptor, zr io.Reader
 	var err error
 
 	var chunkFile *os.File
@@ -273,8 +272,10 @@ func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, e
 		log.Panicf("Failed to chain decryptor for %s: %s", loc, err)
 	}
 
-	zr := lz4.NewReader(decryptor)
-	zr.Header.HighCompression = true
+	if zr, err = chainDecompressor(decryptor); err != nil {
+		log.Panicf("Failed to chain decompressor for %s: %s", loc, err)
+	}
+	//zr.Header.CompressionLevel = 4
 	var readBytes int
 	if readBytes, err = zr.Read(b); err != nil {
 		log.Panicf("Failed to read from chunk %s (%d): %s", loc, size, err)

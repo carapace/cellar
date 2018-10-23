@@ -7,7 +7,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gofrs/flock v0.7.0
 	github.com/golang/protobuf v1.2.0
-	github.com/pierrec/lz4 v1.0.1
+	github.com/pierrec/lz4 v0.0.0-20181005164709-635575b42742
 	github.com/pierrec/xxHash v0.1.1 // indirect
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
