@@ -37,6 +37,14 @@ func checkSeedBytes(data []byte, seed int) error {
 	return nil
 }
 
+func newCompressor() Compressor {
+	return &ChainCompressor{CompressionLevel: 10}
+}
+
+func newDecompressor() Decompressor {
+	return &ChainDecompressor{}
+}
+
 var key = genRandBytes(16)
 
 func newCipher() Cipher {
@@ -49,7 +57,7 @@ func TestWithClosing(t *testing.T) {
 	var err error
 
 	folder := getFolder()
-	w, err = NewWriter(folder, 1000, newCipher())
+	w, err = NewWriter(folder, 1000, newCipher(), newCompressor())
 
 	defer closeWriter(t, w)
 
@@ -62,7 +70,6 @@ func TestWithClosing(t *testing.T) {
 	for j := 0; j < 5; j++ {
 		for i := 0; i < 30; i++ {
 			valuesWritten += 64
-
 			if _, err = w.Append(genSeedBytes(64, k)); err != nil {
 				t.Fatalf("Append failed: %s", err)
 			}
@@ -79,12 +86,12 @@ func TestWithClosing(t *testing.T) {
 
 		assert(t, err, "Closing")
 
-		w, err = NewWriter(folder, 1000, newCipher())
+		w, err = NewWriter(folder, 1000, newCipher(), newCompressor())
 		assert(t, err, "Opening writer")
 
 	}
 
-	reader := NewReader(folder, newCipher())
+	reader := NewReader(folder, newCipher(), newDecompressor())
 
 	var valuesRead int
 	var n int
@@ -131,7 +138,7 @@ func TestUserCheckpoints(t *testing.T) {
 	)
 
 	folder := getFolder()
-	w, err = NewWriter(folder, 1000, newCipher())
+	w, err = NewWriter(folder, 1000, newCipher(), newCompressor())
 
 	defer closeWriter(t, w)
 
@@ -162,7 +169,7 @@ func TestSingleChunkDB(t *testing.T) {
 	var err error
 
 	folder := getFolder()
-	w, err = NewWriter(folder, 1000, newCipher())
+	w, err = NewWriter(folder, 1000, newCipher(), newCompressor())
 
 	defer closeWriter(t, w)
 
@@ -182,7 +189,7 @@ func TestSingleChunkDB(t *testing.T) {
 	var valuesRead int
 	var n int
 
-	reader := NewReader(folder, newCipher())
+	reader := NewReader(folder, newCipher(), newDecompressor())
 
 	err = reader.Scan(func(pos *ReaderInfo, s []byte) error {
 
@@ -213,7 +220,7 @@ func TestSimpleKey(t *testing.T) {
 	var err error
 
 	folder := getFolder()
-	w, err = NewWriter(folder, 1000, newCipher())
+	w, err = NewWriter(folder, 1000, newCipher(), newCompressor())
 
 	defer closeWriter(t, w)
 
@@ -229,7 +236,7 @@ func TestSimpleKey(t *testing.T) {
 	}
 	assertCheckpoint(t, w)
 
-	reader := NewReader(folder, newCipher())
+	reader := NewReader(folder, newCipher(), newDecompressor())
 	var valuesRead int
 	var n int
 
@@ -288,7 +295,7 @@ func TestFuzz(t *testing.T) {
 
 			recordsSaved := len(recs)
 
-			reader := NewReader(folder, newCipher())
+			reader := NewReader(folder, newCipher(), newDecompressor())
 			recordPos := 0
 			if r.Intn(5) > 2 && recordsSaved > 0 {
 				// pick a random pos to scan from
@@ -324,7 +331,7 @@ func TestFuzz(t *testing.T) {
 		}
 
 		if writer == nil {
-			writer, err = NewWriter(folder, int64(maxBufferSize), newCipher())
+			writer, err = NewWriter(folder, int64(maxBufferSize), newCipher(), newCompressor())
 			assert(t, err, "new writer")
 		}
 
