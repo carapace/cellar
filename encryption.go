@@ -5,10 +5,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"github.com/stretchr/testify/require"
 	"io"
 	"log"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/pkg/errors"
 )

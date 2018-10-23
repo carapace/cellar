@@ -26,11 +26,12 @@ type Reader struct {
 	EndPos      int64
 	LimitChunks int
 
-	cipher Cipher
+	cipher       Cipher
+	decompressor Decompressor
 }
 
-func NewReader(folder string, cipher Cipher) *Reader {
-	return &Reader{folder, RF_LoadBuffer, 0, 0, 0, cipher}
+func NewReader(folder string, cipher Cipher, decompressor Decompressor) *Reader {
+	return &Reader{folder, RF_LoadBuffer, 0, 0, 0, cipher, decompressor}
 }
 
 type ReaderInfo struct {
@@ -272,10 +273,11 @@ func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, e
 		log.Panicf("Failed to chain decryptor for %s: %s", loc, err)
 	}
 
-	if zr, err = chainDecompressor(decryptor); err != nil {
+	zr, err = r.decompressor.Decompress(decryptor)
+	if err != nil {
 		log.Panicf("Failed to chain decompressor for %s: %s", loc, err)
 	}
-	//zr.Header.CompressionLevel = 4
+
 	var readBytes int
 	if readBytes, err = zr.Read(b); err != nil {
 		log.Panicf("Failed to read from chunk %s (%d): %s", loc, size, err)
@@ -285,5 +287,4 @@ func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, e
 		log.Panicf("Read %d bytes but expected %d", readBytes, size)
 	}
 	return b[0:readBytes], nil
-
 }

@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/pierrec/lz4"
 	"github.com/pkg/errors"
 )
 
@@ -23,10 +22,11 @@ type Buffer struct {
 	writer *bufio.Writer
 	stream *os.File
 
-	cipher Cipher
+	cipher     Cipher
+	compressor Compressor
 }
 
-func openBuffer(d *BufferDto, folder string, cipher Cipher) (*Buffer, error) {
+func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compressor) (*Buffer, error) {
 
 	if len(d.FileName) == 0 {
 		return nil, errors.New("empty filename")
@@ -44,14 +44,15 @@ func openBuffer(d *BufferDto, folder string, cipher Cipher) (*Buffer, error) {
 	}
 
 	b := &Buffer{
-		fileName: d.FileName,
-		startPos: d.StartPos,
-		maxBytes: d.MaxBytes,
-		pos:      d.Pos,
-		records:  d.Records,
-		stream:   f,
-		writer:   bufio.NewWriter(f),
-		cipher:   cipher,
+		fileName:   d.FileName,
+		startPos:   d.StartPos,
+		maxBytes:   d.MaxBytes,
+		pos:        d.Pos,
+		records:    d.Records,
+		stream:     f,
+		writer:     bufio.NewWriter(f),
+		cipher:     cipher,
+		compressor: compressor,
 	}
 	return b, nil
 }
@@ -146,8 +147,8 @@ func (b *Buffer) compress() (dto *ChunkDto, err error) {
 
 	// compress before encrypting
 
-	var zw *lz4.Writer
-	if zw, err = chainCompressor(encryptor); err != nil {
+	zw, err := b.compressor.Compress(encryptor)
+	if err != nil {
 		log.Panicf("Failed to chain compressor: %s", err)
 	}
 

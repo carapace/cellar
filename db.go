@@ -23,6 +23,9 @@ type DB struct {
 
 	once     *sync.Once
 	fileLock FileLock
+
+	compressor   Compressor
+	decompressor Decompressor
 }
 
 // New is the constructor for DB
@@ -61,6 +64,14 @@ func New(folder string, options ...Option) (*DB, error) {
 	//TODO create a mock cipher which does not decrypt and encrypt
 	if db.cipher == nil {
 		db.cipher = NewAES(defaultEncryptionKey)
+	}
+
+	if db.compressor == nil {
+		db.compressor = ChainCompressor{CompressionLevel: 10}
+	}
+
+	if db.decompressor == nil {
+		db.decompressor = ChainDecompressor{}
 	}
 
 	return db, nil
@@ -206,7 +217,7 @@ func (db *DB) VolatilePos() int64 {
 
 // Reader returns a new db reader. The reader remains active even if the DB is closed
 func (db *DB) Reader() *Reader {
-	return NewReader(db.folder, db.cipher)
+	return NewReader(db.folder, db.cipher, db.decompressor)
 }
 
 // Folder returns the DB folder
@@ -220,7 +231,7 @@ func (db *DB) Buffer() int64 {
 }
 
 func (db *DB) newWriter() {
-	w, err := NewWriter(db.folder, db.buffer, db.cipher)
+	w, err := NewWriter(db.folder, db.buffer, db.cipher, db.compressor)
 	if err != nil {
 		panic(err)
 	}
