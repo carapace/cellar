@@ -7,7 +7,7 @@ import (
 
 func Example() {
 	// options allow for customizing the behaviour of the DB
-	_, err := cellar.New("../db",
+	_, err := cellar.New(".",
 		cellar.WithNoFileLock,                                                // mainly used during tests, ensures no filelock is created
 		cellar.WithMetaDB(&cellar.BoltMetaDB{}),                              // anything implemneting interface MetaDB will work
 		cellar.WithCipher(cellar.NewAES([]byte("supersecretkeyneedsize24"))), // same for interface Cipher

@@ -7,7 +7,7 @@ import (
 
 func Example() {
 	// we are ignoring file locks, since examples are run concurrently in the CI
-	db, err := cellar.New("../db", cellar.WithNoFileLock)
+	db, err := cellar.New(".", cellar.WithNoFileLock)
 	if err != nil {
 		panic(fmt.Sprintf("unable to open cellar db: %s", err))
 	}
@@ -26,5 +26,5 @@ func Example() {
 	// 	panic(fmt.Sprintf("unable to flush cellar db: %s", err))
 	// }
 
-	// Output: new entry at: 66
+	// Output: new entry at: 22
 }
