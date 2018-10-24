@@ -2,17 +2,6 @@
 // source: dto.proto
 // DO NOT EDIT!
 
-/*
-Package cellar is a generated protocol buffer package.
-
-It is generated from these files:
-	dto.proto
-
-It has these top-level messages:
-	ChunkDto
-	BufferDto
-	MetaDto
-*/
 package cellar
 
 import proto "github.com/golang/protobuf/proto"
