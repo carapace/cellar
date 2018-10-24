@@ -10,9 +10,9 @@ import (
 var folders = make(chan string, 100)
 var folderID int32
 
-// NewTempFolder creates a new unique empty folder.
-// Folders have to be cleaned up via RemoveTempFolders
-func NewTempFolder(name string) string {
+// newTempFolder creates a new unique empty folder.
+// Folders have to be cleaned up via removeTempFolders
+func newTempFolder(name string) string {
 	var folder string
 	var err error
 
@@ -25,8 +25,8 @@ func NewTempFolder(name string) string {
 	return folder
 }
 
-// RemoveTempFolders cleans up all test folders
-func RemoveTempFolders() {
+// removeTempFolders cleans up all test folders
+func removeTempFolders() {
 	close(folders)
 	for f := range folders {
 		os.RemoveAll(f)
