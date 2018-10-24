@@ -111,7 +111,7 @@ func (db *DB) Append(data []byte) (pos int64, err error) {
 func (db *DB) Close() (err error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-
+	defer db.meta.Close()
 	err = db.fileLock.Unlock()
 	if err != nil {
 		return
