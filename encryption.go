@@ -1,18 +1,12 @@
 package cellar
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"github.com/pkg/errors"
 	"io"
 	"log"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/pkg/errors"
 )
 
 var defaultEncryptionKey = []byte("estencryptionkey")
@@ -72,33 +66,3 @@ func (a AES) Encrypt(w io.Writer) (*cipher.StreamWriter, error) {
 	writer := &cipher.StreamWriter{S: stream, W: w}
 	return writer, nil
 }
-
-// TestCipher is a testsuite for Cipher implementations, which may be used to verify custom
-// implementations
-func TestCipher(t *testing.T, cipher Cipher) {
-	data := []byte("some custom data")
-	stream, err := cipher.Encrypt(bytes.NewBuffer(data))
-
-	require.NoError(t, err)
-
-	buf := new(bytes.Buffer)
-	_, err = io.Copy(stream, buf)
-	assert.NoError(t, err)
-
-	reader, err := cipher.Decrypt(buf)
-	require.NoError(t, err)
-
-	res := []byte{}
-	_, err = reader.Read(res)
-	assert.NoError(t, err)
-}
-
-// type CipherMock struct {}
-//
-// func (c CipherMock) Encrypt(w io.Writer) (*cipher.StreamWriter, error) {
-// 	return &cipher.StreamWriter{
-// 		W: w,
-// 		S:
-//
-// 	}, nil
-// }
