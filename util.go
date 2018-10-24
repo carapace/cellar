@@ -6,6 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrIsFile = errors.New("provided folder is actually a path")
+)
+
 func ensureFolder(folder string) (err error) {
 
 	var stat os.FileInfo
@@ -13,7 +17,7 @@ func ensureFolder(folder string) (err error) {
 		if stat.IsDir() {
 			return nil
 		}
-		return errors.Errorf("Path is a file: %s", folder)
+		return ErrIsFile
 	}
 
 	if os.IsNotExist(err) {
