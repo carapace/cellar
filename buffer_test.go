@@ -26,7 +26,7 @@ func TestWrites(t *testing.T) {
 		panic(err)
 	}
 
-	err = buf.writeBytes(makeSlice(1))
+	err = buf.writeBytes(make([]byte, 1))
 	assert.NoError(t, err)
 
 	assertExists(t, path.Join(folder, "temp"))
@@ -62,7 +62,7 @@ func TestExist(t *testing.T) {
 
 	assert.NoError(t, err, "openBuffer")
 
-	assert.NoError(t, buf.writeBytes(makeSlice(1)), "writeVarInt")
+	assert.NoError(t, buf.writeBytes(make([]byte, 1)), "writeVarInt")
 
 	assertPos(t, buf, 1)
 
