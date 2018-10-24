@@ -21,10 +21,11 @@ func TestReader_ScanAsync(t *testing.T) {
 
 	var passed bool
 	vals, errchan := reader.ScanAsync(context.Background(), 1)
+
 	for {
 		select {
-		case <-errchan:
-			require.NoError(t, <-errchan)
+		case err := <-errchan:
+			require.NoError(t, err)
 		case v, ok := <-vals:
 			if !ok {
 				break
