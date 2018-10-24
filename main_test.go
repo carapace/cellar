@@ -6,16 +6,12 @@ import (
 )
 
 func getFolder() string {
-	return NewTempFolder("cellar")
+	return newTempFolder("cellar")
 }
 
 func TestMain(m *testing.M) {
 	// setup
 	retCode := m.Run()
-	RemoveTempFolders()
+	removeTempFolders()
 	os.Exit(retCode)
-}
-
-func makeSlice(l int) []byte {
-	return make([]byte, l)
 }
