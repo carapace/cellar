@@ -2,13 +2,15 @@ package cellar
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
 	"time"
 
-	"go.etcd.io/bbolt"
+	"github.com/boltdb/bolt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	pb "github.com/carapace/cellar/proto"
 )
 
 var mu = &sync.Mutex{}
@@ -34,10 +36,10 @@ func newBoltMetaDB() (db *BoltMetaDB) {
 func TestBoltMetaDB_AddChunk_ListChunk(t *testing.T) {
 	db := newBoltMetaDB()
 
-	err := db.AddChunk(0, &ChunkDto{})
+	err := db.AddChunk(0, &pb.ChunkDto{})
 	require.NoError(t, err)
 
-	err = db.AddChunk(10, &ChunkDto{})
+	err = db.AddChunk(10, &pb.ChunkDto{})
 	require.NoError(t, err)
 
 	chunks, err := db.ListChunks()

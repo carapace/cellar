@@ -1,11 +1,12 @@
 package cellar
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.etcd.io/bbolt"
 	"testing"
 	"time"
+
+	"github.com/boltdb/bolt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReader_Scan(t *testing.T) {

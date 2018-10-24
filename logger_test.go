@@ -1,8 +1,9 @@
 package cellar
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultLogger(t *testing.T) {

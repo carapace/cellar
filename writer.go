@@ -3,11 +3,13 @@ package cellar
 import (
 	"encoding/binary"
 	"fmt"
-	"go.uber.org/zap"
 	"log"
 	"os"
 	"path"
 
+	"go.uber.org/zap"
+
+	pb "github.com/carapace/cellar/proto"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +33,7 @@ func NewWriter(folder string, maxBufferSize int64, cipher Cipher, compressor Com
 		return nil, err
 	}
 
-	var meta *MetaDto
+	var meta *pb.MetaDto
 	var b *Buffer
 
 	dto, err := db.GetBuffer()
@@ -116,7 +118,7 @@ func (w *Writer) Append(data []byte) (pos int64, err error) {
 
 func createBuffer(db MetaDB, startPos int64, maxSize int64, folder string, cipher Cipher, compressor Compressor, logger *zap.Logger) (*Buffer, error) {
 	name := fmt.Sprintf("%012d", startPos)
-	dto := &BufferDto{
+	dto := &pb.BufferDto{
 		Pos:      0,
 		StartPos: startPos,
 		MaxBytes: maxSize,
@@ -148,7 +150,7 @@ func (w *Writer) Flush() error {
 		return errors.Wrap(err, "buffer.Flush")
 	}
 
-	var dto *ChunkDto
+	var dto *pb.ChunkDto
 
 	if dto, err = oldBuffer.compress(); err != nil {
 		return errors.Wrap(err, "compress")
@@ -206,7 +208,7 @@ func (w *Writer) Checkpoint() (int64, error) {
 		return 0, err
 	}
 
-	meta := &MetaDto{
+	meta := &pb.MetaDto{
 		MaxKeySize: w.maxKeySize,
 		MaxValSize: w.maxValSize,
 	}

@@ -3,11 +3,13 @@ package cellar
 import (
 	"bufio"
 	"crypto/cipher"
-	"go.uber.org/zap"
 	"io"
 	"os"
 	"path"
 
+	"go.uber.org/zap"
+
+	pb "github.com/carapace/cellar/proto"
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +30,7 @@ type Buffer struct {
 	logger *zap.Logger
 }
 
-func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compressor, logger *zap.Logger) (*Buffer, error) {
+func openBuffer(d *pb.BufferDto, folder string, cipher Cipher, compressor Compressor, logger *zap.Logger) (*Buffer, error) {
 
 	if len(d.FileName) == 0 {
 		return nil, errors.New("empty filename")
@@ -64,8 +66,8 @@ func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compresso
 	return b, nil
 }
 
-func (b *Buffer) getState() *BufferDto {
-	return &BufferDto{
+func (b *Buffer) getState() *pb.BufferDto {
+	return &pb.BufferDto{
 		FileName: b.fileName,
 		MaxBytes: b.maxBytes,
 		StartPos: b.startPos,
@@ -109,7 +111,7 @@ func (b *Buffer) close() error {
 	return nil
 }
 
-func (b *Buffer) compress() (dto *ChunkDto, err error) {
+func (b *Buffer) compress() (dto *pb.ChunkDto, err error) {
 
 	loc := b.stream.Name() + ".lz4"
 
@@ -175,7 +177,7 @@ func (b *Buffer) compress() (dto *ChunkDto, err error) {
 		return nil, errors.Wrap(err, "Seek")
 	}
 
-	dto = &ChunkDto{
+	dto = &pb.ChunkDto{
 		FileName:             b.fileName + ".lz4",
 		Records:              b.records,
 		UncompressedByteSize: b.pos,

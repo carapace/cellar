@@ -2,13 +2,14 @@ package cellar
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
+	"github.com/boltdb/bolt"
 	"github.com/gofrs/flock"
 	"github.com/pkg/errors"
-	"go.etcd.io/bbolt"
 )
 
 const lockfile = "cellar.lock"

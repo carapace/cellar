@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	pb "github.com/carapace/cellar/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +13,7 @@ func TestWrites(t *testing.T) {
 
 	folder := getFolder()
 
-	b := &BufferDto{
+	b := &pb.BufferDto{
 		FileName: "temp",
 		MaxBytes: 100000,
 	}
@@ -50,7 +51,7 @@ func TestExist(t *testing.T) {
 
 	folder := getFolder()
 
-	b := &BufferDto{
+	b := &pb.BufferDto{
 		FileName: "temp",
 		MaxBytes: 100000,
 	}
@@ -71,7 +72,7 @@ func TestExist(t *testing.T) {
 
 	buf.endRecord()
 
-	var chunk *ChunkDto
+	var chunk *pb.ChunkDto
 	chunk, err = buf.compress()
 
 	assert.NoError(t, err, "compress")

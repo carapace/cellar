@@ -2,7 +2,7 @@
 // source: dto.proto
 // DO NOT EDIT!
 
-package cellar
+package proto
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

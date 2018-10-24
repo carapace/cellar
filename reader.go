@@ -2,10 +2,11 @@ package cellar
 
 import (
 	"encoding/binary"
-	"go.uber.org/zap"
 	"io"
 	"os"
 	"path"
+
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 )

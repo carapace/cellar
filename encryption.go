@@ -4,9 +4,10 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"github.com/pkg/errors"
 	"io"
 	"log"
+
+	"github.com/pkg/errors"
 )
 
 var defaultEncryptionKey = []byte("estencryptionkey")

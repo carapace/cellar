@@ -3,11 +3,12 @@ package cellar
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func genRandBytes(size int) []byte {

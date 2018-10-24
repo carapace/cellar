@@ -3,9 +3,10 @@ package cellar
 import (
 	"encoding/binary"
 
+	"github.com/boltdb/bolt"
+	pb "github.com/carapace/cellar/proto"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"go.etcd.io/bbolt"
 )
 
 var (
@@ -26,7 +27,7 @@ type BoltMetaDB struct {
 	*bolt.DB
 }
 
-func (b *BoltMetaDB) GetBuffer() (buf *BufferDto, err error) {
+func (b *BoltMetaDB) GetBuffer() (buf *pb.BufferDto, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(BufferBucketKey)
 		if bucket == nil {
@@ -40,7 +41,7 @@ func (b *BoltMetaDB) GetBuffer() (buf *BufferDto, err error) {
 			return nil
 		}
 
-		buf = &BufferDto{}
+		buf = &pb.BufferDto{}
 		if err := proto.Unmarshal(data, buf); err != nil {
 			return errors.Wrap(err, "Unmarshal")
 		}
@@ -49,7 +50,7 @@ func (b *BoltMetaDB) GetBuffer() (buf *BufferDto, err error) {
 	return
 }
 
-func (b *BoltMetaDB) PutBuffer(dto *BufferDto) (err error) {
+func (b *BoltMetaDB) PutBuffer(dto *pb.BufferDto) (err error) {
 	err = b.Update(func(tx *bolt.Tx) error {
 		val, err := proto.Marshal(dto)
 		if err != nil {
@@ -64,8 +65,8 @@ func (b *BoltMetaDB) PutBuffer(dto *BufferDto) (err error) {
 	return
 }
 
-func (b *BoltMetaDB) CellarMeta() (dto *MetaDto, err error) {
-	dto = &MetaDto{}
+func (b *BoltMetaDB) CellarMeta() (dto *pb.MetaDto, err error) {
+	dto = &pb.MetaDto{}
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(CellarBucketKey)
 		if bucket == nil {
@@ -85,15 +86,15 @@ func (b *BoltMetaDB) CellarMeta() (dto *MetaDto, err error) {
 	return
 }
 
-func (b *BoltMetaDB) ListChunks() (dto []*ChunkDto, err error) {
-	dto = []*ChunkDto{}
+func (b *BoltMetaDB) ListChunks() (dto []*pb.ChunkDto, err error) {
+	dto = []*pb.ChunkDto{}
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(ChunkTableKey)
 		if bucket == nil {
 			return ErrBucketNotExists
 		}
 		err = bucket.ForEach(func(k, v []byte) error {
-			chunk := &ChunkDto{}
+			chunk := &pb.ChunkDto{}
 			err := proto.Unmarshal(v, chunk)
 			if err != nil {
 				return err
@@ -138,7 +139,7 @@ func (b *BoltMetaDB) GetCheckpoint(name string) (pos int64, err error) {
 	return
 }
 
-func (b *BoltMetaDB) SetCellarMeta(dto *MetaDto) (err error) {
+func (b *BoltMetaDB) SetCellarMeta(dto *pb.MetaDto) (err error) {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(CellarBucketKey)
 		if bucket == nil {
@@ -152,7 +153,7 @@ func (b *BoltMetaDB) SetCellarMeta(dto *MetaDto) (err error) {
 	})
 }
 
-func (b *BoltMetaDB) AddChunk(pos int64, dto *ChunkDto) error {
+func (b *BoltMetaDB) AddChunk(pos int64, dto *pb.ChunkDto) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := make([]byte, 8)
 		binary.LittleEndian.PutUint64(b, uint64(pos))
