@@ -15,8 +15,8 @@ type Rec struct {
 //
 // ScanAsync honors context cancellations. If an error is received in the error channel, no more values will
 // be scanned and the routine exits.
-func (reader *Reader) ScanAsync(ctx context.Context, buffer int) (chan *Rec, chan error) {
-	vals := make(chan *Rec, buffer)
+func (reader *Reader) ScanAsync(ctx context.Context, buffer int) (chan Rec, chan error) {
+	vals := make(chan Rec, buffer)
 	errs := make(chan error)
 
 	go func() {
@@ -29,7 +29,7 @@ func (reader *Reader) ScanAsync(ctx context.Context, buffer int) (chan *Rec, cha
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				vals <- &Rec{data, ri.ChunkPos, ri.StartPos, ri.NextPos}
+				vals <- Rec{data, ri.ChunkPos, ri.StartPos, ri.NextPos}
 				return nil
 			}
 		})
