@@ -24,9 +24,12 @@ type Cipher interface {
 func NewAES(key []byte) AES {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Panic("Failed to create a new cipher from the key")
+		// this error should only occur during startup if not properly configured.
+		// An alternative would be to  return an error, however it is required
+		// that program execution ends. We should not generate a longer key without
+		// informing the user.
+		log.Panic("Failed to create a new cipher from key: " + err.Error())
 	}
-
 	return AES{
 		key:   key,
 		block: block,
@@ -55,11 +58,11 @@ func (a AES) Encrypt(w io.Writer) (*cipher.StreamWriter, error) {
 	iv := make([]byte, aes.BlockSize)
 
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "unable to read rand.Reader")
 	}
 
 	if _, err := w.Write(iv); err != nil {
-		return nil, errors.Wrap(err, "Write")
+		return nil, errors.Wrap(err, "unable to write to iv buffer")
 	}
 	stream := cipher.NewCFBEncrypter(a.block, iv)
 

@@ -1,5 +1,9 @@
 package cellar
 
+import (
+	"go.uber.org/zap"
+)
+
 type Option func(db *DB) error
 
 // WithCipher allows for customizing the read/write encryption.
@@ -29,4 +33,16 @@ func (m MockLock) Unlock() error          { return nil }
 func WithNoFileLock(db *DB) error {
 	db.fileLock = MockLock{}
 	return nil
+}
+
+func WithReadOnly(db *DB) error {
+	db.readonly = true
+	return nil
+}
+
+func WithLogger(logger *zap.Logger) Option {
+	return func(db *DB) error {
+		db.logger = logger
+		return nil
+	}
 }

@@ -2,9 +2,8 @@ package cellar
 
 import (
 	"encoding/binary"
-	"fmt"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"os"
 	"path"
 
@@ -29,10 +28,21 @@ type Reader struct {
 	cipher       Cipher
 	decompressor Decompressor
 	metadb       MetaDB
+	logger       *zap.Logger
 }
 
-func NewReader(folder string, cipher Cipher, decompressor Decompressor, meta MetaDB) *Reader {
-	return &Reader{folder, RF_LoadBuffer, 0, 0, 0, cipher, decompressor, meta}
+func NewReader(folder string, cipher Cipher, decompressor Decompressor, meta MetaDB, logger *zap.Logger) *Reader {
+	return &Reader{
+		Folder:       folder,
+		Flags:        RF_LoadBuffer,
+		StartPos:     0,
+		EndPos:       0,
+		LimitChunks:  0,
+		cipher:       cipher,
+		decompressor: decompressor,
+		metadb:       meta,
+		logger:       logger,
+	}
 }
 
 type ReaderInfo struct {
@@ -57,8 +67,6 @@ func (r *Reader) Scan(op ReadOp) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(b.String())
 
 	chunks, err := r.metadb.ListChunks()
 	if err != nil {
@@ -99,11 +107,14 @@ func (r *Reader) Scan(op ReadOp) error {
 			var file = path.Join(r.Folder, c.FileName)
 
 			if printChunks {
-				log.Printf("Loading chunk %d %s with size %d", i, c.FileName, c.UncompressedByteSize)
+				r.logger.Info("Loading chunk %d %s with size %d",
+					zap.Int("CHUNK", i),
+					zap.String("FILENAME", c.FileName),
+					zap.Int64("UNCOMPRESSED SIZE", c.UncompressedByteSize))
 			}
 
 			if chunk, err = r.loadChunkIntoBuffer(file, c.UncompressedByteSize, chunk); err != nil {
-				log.Panicf("Failed to load chunk %s", c.FileName)
+				return errors.Wrapf(err, "failed to load chunk %s", c.FileName)
 			}
 
 			info.ChunkPos = c.StartPos
@@ -132,17 +143,18 @@ func (r *Reader) Scan(op ReadOp) error {
 		var f *os.File
 
 		if f, err = os.Open(loc); err != nil {
-			log.Panicf("Failed to open buffer file %s", loc)
+			return errors.Wrapf(err, "failed to open buffer file %s", loc)
 		}
 
 		curChunk := make([]byte, b.Pos)
 
 		var n int
 		if n, err = f.Read(curChunk); err != nil {
-			log.Panicf("Failed to read %d bytes from buffer %s", b.Pos, loc)
+			return errors.Wrapf(err, "failed to read %d bytes from buffer %s", b.Pos, loc)
 		}
+
 		if n != int(b.Pos) {
-			log.Panic("Failed to read bytes")
+			return errors.New("failed to read bytes")
 		}
 
 		info.ChunkPos = b.StartPos
@@ -153,9 +165,8 @@ func (r *Reader) Scan(op ReadOp) error {
 			chunkPos = int(r.StartPos - b.StartPos)
 		}
 
-		fmt.Println("replaying chunks")
 		if err = replayChunk(info, curChunk, op, chunkPos); err != nil {
-			return errors.Wrap(err, "Failed to read chunk")
+			return errors.Wrap(err, "failed to read chunk")
 		}
 
 	}
@@ -164,11 +175,11 @@ func (r *Reader) Scan(op ReadOp) error {
 
 }
 
-func readVarint(b []byte) (val int64, n int) {
+func readVarint(b []byte) (val int64, n int, err error) {
 
 	val, n = binary.Varint(b)
 	if n <= 0 {
-		log.Panicf("Failed to read varint %d", n)
+		err = errors.Errorf("failed to read varint %d", n)
 	}
 
 	return
@@ -179,8 +190,6 @@ func replayChunk(info *ReaderInfo, chunk []byte, op ReadOp, pos int) error {
 
 	max := len(chunk)
 
-	var err error
-
 	// while we are not at the end,
 	// read first len
 	// then pass the bytes to the op
@@ -188,7 +197,10 @@ func replayChunk(info *ReaderInfo, chunk []byte, op ReadOp, pos int) error {
 
 		info.StartPos = int64(pos) + info.ChunkPos
 
-		recordSize, shift := readVarint(chunk[pos:])
+		recordSize, shift, err := readVarint(chunk[pos:])
+		if err != nil {
+			return errors.Cause(err)
+		}
 
 		// move position by the header size
 		pos += shift
@@ -202,7 +214,7 @@ func replayChunk(info *ReaderInfo, chunk []byte, op ReadOp, pos int) error {
 		info.NextPos = int64(pos) + info.ChunkPos
 
 		if err = op(info, record); err != nil {
-			return errors.Wrap(err, "Failed to execute op")
+			return errors.Wrap(err, "failed to execute op")
 		}
 		// shift pos
 
@@ -211,23 +223,6 @@ func replayChunk(info *ReaderInfo, chunk []byte, op ReadOp, pos int) error {
 
 }
 
-// TODO ask abdullin why this function exists
-// func getMaxByteSize(cs []*ChunkDto, b *BufferDto) int64 {
-//
-// 	var bufferSize int64
-//
-// 	for _, c := range cs {
-// 		if c.UncompressedByteSize > bufferSize {
-// 			bufferSize = c.UncompressedByteSize
-// 		}
-// 	}
-//
-// 	if b != nil && b.MaxBytes > bufferSize {
-// 		bufferSize = b.MaxBytes
-// 	}
-// 	return bufferSize
-// }
-
 func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, error) {
 
 	var decryptor, zr io.Reader
@@ -235,27 +230,27 @@ func (r Reader) loadChunkIntoBuffer(loc string, size int64, b []byte) ([]byte, e
 
 	var chunkFile *os.File
 	if chunkFile, err = os.Open(loc); err != nil {
-		log.Panicf("Failed to open chunk %s", loc)
+		return nil, errors.Wrapf(err, "failed to open chunk %s", loc)
 	}
 
 	defer chunkFile.Close()
 
 	if decryptor, err = r.cipher.Decrypt(chunkFile); err != nil {
-		log.Panicf("Failed to chain decryptor for %s: %s", loc, err)
+		return nil, errors.Wrapf(err, "failed to chain decryptor %s", loc)
 	}
 
 	zr, err = r.decompressor.Decompress(decryptor)
 	if err != nil {
-		log.Panicf("Failed to chain decompressor for %s: %s", loc, err)
+		return nil, errors.Wrapf(err, "failed to chain decompressor %s", loc)
 	}
 
 	var readBytes int
 	if readBytes, err = zr.Read(b); err != nil {
-		log.Panicf("Failed to read from chunk %s (%d): %s", loc, size, err)
+		return nil, errors.Wrapf(err, "failed to read from chunk %s (%d)", loc, size)
 	}
 
 	if int64(readBytes) != size {
-		log.Panicf("Read %d bytes but expected %d", readBytes, size)
+		return nil, errors.Errorf("read %d bytes but expected %d", readBytes, size)
 	}
 	return b[0:readBytes], nil
 }

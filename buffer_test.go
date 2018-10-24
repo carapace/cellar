@@ -22,7 +22,7 @@ func TestWrites(t *testing.T) {
 		err error
 	)
 
-	if buf, err = openBuffer(b, folder, newCipher(), newCompressor()); err != nil {
+	if buf, err = openBuffer(b, folder, newCipher(), newCompressor(), defaultLogger()); err != nil {
 		panic(err)
 	}
 
@@ -58,7 +58,7 @@ func TestExist(t *testing.T) {
 	var buf *Buffer
 	var err error
 
-	buf, err = openBuffer(b, folder, newCipher(), newCompressor())
+	buf, err = openBuffer(b, folder, newCipher(), newCompressor(), defaultLogger())
 
 	assert.NoError(t, err, "openBuffer")
 

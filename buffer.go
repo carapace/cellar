@@ -3,8 +3,8 @@ package cellar
 import (
 	"bufio"
 	"crypto/cipher"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"os"
 	"path"
 
@@ -24,9 +24,11 @@ type Buffer struct {
 
 	cipher     Cipher
 	compressor Compressor
+
+	logger *zap.Logger
 }
 
-func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compressor) (*Buffer, error) {
+func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compressor, logger *zap.Logger) (*Buffer, error) {
 
 	if len(d.FileName) == 0 {
 		return nil, errors.New("empty filename")
@@ -57,6 +59,7 @@ func openBuffer(d *BufferDto, folder string, cipher Cipher, compressor Compresso
 		writer:     bufio.NewWriter(f),
 		cipher:     cipher,
 		compressor: compressor,
+		logger:     logger,
 	}
 	return b, nil
 }
@@ -111,14 +114,14 @@ func (b *Buffer) compress() (dto *ChunkDto, err error) {
 	loc := b.stream.Name() + ".lz4"
 
 	if err = b.writer.Flush(); err != nil {
-		log.Panicf("Failed to flush buffer: %s", err)
+		return nil, errors.Wrap(err, "failed to flush buffer")
 	}
 	if err = b.stream.Sync(); err != nil {
-		log.Panicf("Failed to Fsync buffer: %s", err)
+		return nil, errors.Wrap(err, "failed to Fsync buffer")
 	}
 
 	if _, err = b.stream.Seek(0, io.SeekStart); err != nil {
-		log.Panicf("Failed to seek to 0 in buffer: %s", err)
+		return nil, errors.Wrap(err, "failed to seek to 0 in buffer")
 	}
 
 	// create chunk file
@@ -129,10 +132,10 @@ func (b *Buffer) compress() (dto *ChunkDto, err error) {
 
 	defer func() {
 		if err := chunkFile.Sync(); err != nil {
-			panic("Failed to sync")
+			err = errors.Wrap(err, "failed to Fsync chunkFile")
 		}
 		if err := chunkFile.Close(); err != nil {
-			panic("Failed to close")
+			err = errors.Wrap(err, "failed to close chunkFile")
 		}
 	}()
 
@@ -144,16 +147,15 @@ func (b *Buffer) compress() (dto *ChunkDto, err error) {
 	// encrypt before buffering
 	var encryptor *cipher.StreamWriter
 	if encryptor, err = b.cipher.Encrypt(buffer); err != nil {
-		log.Panicf("Failed to chain encryptor for %s: %s", loc, err)
+		return nil, errors.Wrapf(err, "failed to chain encryptor for %s", loc)
 	}
 
 	defer encryptor.Close()
 
 	// compress before encrypting
-
 	zw, err := b.compressor.Compress(encryptor)
 	if err != nil {
-		log.Panicf("Failed to chain compressor: %s", err)
+		return nil, errors.Wrap(err, "failed to chain compressor")
 	}
 
 	// copy chunk to the chain

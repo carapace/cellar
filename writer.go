@@ -3,6 +3,7 @@ package cellar
 import (
 	"encoding/binary"
 	"fmt"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"path"
@@ -21,9 +22,10 @@ type Writer struct {
 	encodingBuf   []byte
 
 	compressor Compressor
+	logger     *zap.Logger
 }
 
-func NewWriter(folder string, maxBufferSize int64, cipher Cipher, compressor Compressor, db MetaDB) (*Writer, error) {
+func NewWriter(folder string, maxBufferSize int64, cipher Cipher, compressor Compressor, db MetaDB, logger *zap.Logger) (*Writer, error) {
 	err := ensureFolder(folder)
 	if err != nil {
 		return nil, err
@@ -38,12 +40,12 @@ func NewWriter(folder string, maxBufferSize int64, cipher Cipher, compressor Com
 	}
 
 	if dto == nil {
-		b, err = createBuffer(db, 0, maxBufferSize, folder, cipher, compressor)
+		b, err = createBuffer(db, 0, maxBufferSize, folder, cipher, compressor, logger)
 		if err != nil {
 			return nil, errors.Wrap(err, "SetNewBuffer")
 		}
 	} else {
-		b, err = openBuffer(dto, folder, cipher, compressor)
+		b, err = openBuffer(dto, folder, cipher, compressor, logger)
 		if err != nil {
 			return nil, errors.Wrap(err, "openBuffer")
 		}
@@ -61,6 +63,7 @@ func NewWriter(folder string, maxBufferSize int64, cipher Cipher, compressor Com
 		db:            db,
 		b:             b,
 		compressor:    compressor,
+		logger:        logger,
 	}
 
 	if meta != nil {
@@ -111,7 +114,7 @@ func (w *Writer) Append(data []byte) (pos int64, err error) {
 	return pos, nil
 }
 
-func createBuffer(db MetaDB, startPos int64, maxSize int64, folder string, cipher Cipher, compressor Compressor) (*Buffer, error) {
+func createBuffer(db MetaDB, startPos int64, maxSize int64, folder string, cipher Cipher, compressor Compressor, logger *zap.Logger) (*Buffer, error) {
 	name := fmt.Sprintf("%012d", startPos)
 	dto := &BufferDto{
 		Pos:      0,
@@ -123,7 +126,7 @@ func createBuffer(db MetaDB, startPos int64, maxSize int64, folder string, ciphe
 	var err error
 	var buf *Buffer
 
-	if buf, err = openBuffer(dto, folder, cipher, compressor); err != nil {
+	if buf, err = openBuffer(dto, folder, cipher, compressor, logger); err != nil {
 		return nil, errors.Wrapf(err, "openBuffer %s", folder)
 	}
 
@@ -158,7 +161,7 @@ func (w *Writer) Flush() error {
 		return err
 	}
 
-	newBuffer, err = createBuffer(w.db, newStartPos, w.maxBufferSize, w.folder, w.cipher, w.compressor)
+	newBuffer, err = createBuffer(w.db, newStartPos, w.maxBufferSize, w.folder, w.cipher, w.compressor, w.logger)
 	if err != nil {
 		return errors.Wrap(err, "createBuffer")
 	}

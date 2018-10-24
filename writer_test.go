@@ -70,9 +70,8 @@ func TestWriter_Append_Read(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		pos, err := db.Append([]byte(tc.input))
+		_, err := db.Append([]byte(tc.input))
 		require.NoError(t, err)
-		fmt.Println("input locations:", pos)
 
 	}
 	db.Flush()

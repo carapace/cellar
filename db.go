@@ -2,6 +2,7 @@ package cellar
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 
@@ -30,6 +31,8 @@ type DB struct {
 	meta MetaDB
 
 	readonly bool
+
+	logger *zap.Logger
 }
 
 // New is the constructor for DB
@@ -49,8 +52,14 @@ func New(folder string, options ...Option) (*DB, error) {
 		}
 	}
 
+	if db.logger == nil {
+		db.logger = defaultLogger()
+		db.logger.Info("using default logger")
+	}
+
 	// checking for nil allows us to create an options which supersede these routines.
 	if db.fileLock == nil {
+		db.logger.Info("creating file lock")
 		// Create the lockile
 		file := flock.New(fmt.Sprintf("%s/%s", folder, lockfile))
 		locked, err := file.TryLock()
@@ -67,18 +76,22 @@ func New(folder string, options ...Option) (*DB, error) {
 
 	//TODO create a mock cipher which does not decrypt and encrypt
 	if db.cipher == nil {
+		db.logger.Info("creating cipher")
 		db.cipher = NewAES(defaultEncryptionKey)
 	}
 
 	if db.compressor == nil {
+		db.logger.Info("creating ChainCompressor")
 		db.compressor = ChainCompressor{CompressionLevel: 10}
 	}
 
 	if db.decompressor == nil {
+		db.logger.Info("creating ChainDecompressor")
 		db.decompressor = ChainDecompressor{}
 	}
 
 	if db.meta == nil {
+		db.logger.Info("creating metadb", zap.String("IMPLEMENTATION", "BOLTDB"))
 		blt, err := bolt.Open(fmt.Sprintf("%s/%s", folder, "meta.bolt"), 0600, &bolt.Options{Timeout: 1 * time.Second})
 		if err != nil {
 			return nil, err
@@ -91,6 +104,7 @@ func New(folder string, options ...Option) (*DB, error) {
 	}
 
 	if db.writer == nil && !db.readonly {
+		db.logger.Info("creating new writer", zap.Bool("READONLY", false))
 		err := db.newWriter()
 		if err != nil {
 			return nil, err
@@ -109,6 +123,7 @@ func (db *DB) Append(data []byte) (pos int64, err error) {
 
 // Close ensures filelocks are cleared and resources closed. Readers derived from this DB instance will remain functional.
 func (db *DB) Close() (err error) {
+	db.logger.Info("closing db")
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	defer db.meta.Close()
@@ -129,6 +144,7 @@ func (db *DB) Checkpoint() (pos int64, err error) {
 
 // SealTheBuffer explicitly flushes the old buffer and creates a new buffer
 func (db *DB) Flush() (err error) {
+	db.logger.Info("flushing db")
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -158,7 +174,7 @@ func (db *DB) VolatilePos() int64 {
 
 // Reader returns a new db reader. The reader remains active even if the DB is closed
 func (db *DB) Reader() *Reader {
-	return NewReader(db.folder, db.cipher, db.decompressor, db.meta)
+	return NewReader(db.folder, db.cipher, db.decompressor, db.meta, db.logger)
 }
 
 // Folder returns the DB folder
@@ -172,7 +188,7 @@ func (db *DB) Buffer() int64 {
 }
 
 func (db *DB) newWriter() error {
-	w, err := NewWriter(db.folder, db.buffer, db.cipher, db.compressor, db.meta)
+	w, err := NewWriter(db.folder, db.buffer, db.cipher, db.compressor, db.meta, db.logger)
 	if err != nil {
 		return err
 	}
