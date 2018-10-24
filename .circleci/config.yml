@@ -38,4 +38,4 @@ workflows:
   tests:
     jobs:
       - test:
-          context: docker
+          context: coveralls
