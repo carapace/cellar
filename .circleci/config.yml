@@ -29,11 +29,14 @@ jobs:
     - run:
         name: Test and run linters.
         command: |
-          go test -v -race
-#          golangci-lint run # golangci lint does not yet support go modules :(
+          courtney
+          goveralls -coverprofile=coverage.out -service=cirlceci -repotoken $COVERALLS_REPO_TOKEN
+#         golangci-lint run # golangci lint does not yet support go modules :(
 
 
 workflows:
   version: 2
   tests:
-    jobs: [test]
+    jobs:
+      - test:
+          context: docker
