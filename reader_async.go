@@ -1,7 +1,7 @@
 package cellar
 
 import (
-	"log"
+	"context"
 )
 
 type Rec struct {
@@ -11,23 +11,32 @@ type Rec struct {
 	NextPos  int64
 }
 
-func (reader *Reader) ScanAsync(buffer int) chan *Rec {
-
+// ScanAsync runs Reader.Scan in a goroutine, returning the values obtained.
+//
+// ScanAsync honors context cancellations. If an error is received in the error channel, no more values will
+// be scanned and the routine exits.
+func (reader *Reader) ScanAsync(ctx context.Context, buffer int) (chan *Rec, chan error) {
 	vals := make(chan *Rec, buffer)
+	errs := make(chan error)
 
 	go func() {
 		// make sure we terminate the channel on scan read
 		defer close(vals)
+		defer close(errs)
 
 		err := reader.Scan(func(ri *ReaderInfo, data []byte) error {
-			vals <- &Rec{data, ri.ChunkPos, ri.StartPos, ri.NextPos}
-			return nil
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				vals <- &Rec{data, ri.ChunkPos, ri.StartPos, ri.NextPos}
+				return nil
+			}
 		})
 
 		if err != nil {
-			log.Panic(err)
+			errs <- err
 		}
 	}()
-
-	return vals
+	return vals, errs
 }
