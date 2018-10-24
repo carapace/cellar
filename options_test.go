@@ -8,22 +8,27 @@ import (
 
 func TestWithCipher(t *testing.T) {
 	aes := NewAES(defaultEncryptionKey)
-	db, err := New(dbDir, WithReadOnly, WithCipher(aes))
+	db, err := New(dbDir, WithNoFileLock, WithReadOnly, WithCipher(aes))
 	require.NoError(t, err)
+	defer db.Close()
+
 	assert.Equal(t, aes, db.cipher)
 }
 
 func TestWithLogger(t *testing.T) {
 	logger := defaultLogger()
-	db, err := New(dbDir, WithReadOnly, WithLogger(logger))
+	db, err := New(dbDir, WithNoFileLock, WithReadOnly, WithLogger(logger))
 	require.NoError(t, err)
+	defer db.Close()
+
 	assert.Equal(t, logger, db.logger)
 }
 
 func TestWithMetaDB(t *testing.T) {
 	mdb := &BoltMetaDB{}
-	db, err := New(dbDir, WithReadOnly, WithMetaDB(mdb))
+	db, err := New(dbDir, WithNoFileLock, WithReadOnly, WithMetaDB(mdb))
 	require.NoError(t, err)
+
 	assert.Equal(t, mdb, db.meta)
 }
 
